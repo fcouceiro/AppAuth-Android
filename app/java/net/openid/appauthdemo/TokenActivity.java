@@ -420,7 +420,7 @@ public class TokenActivity extends AppCompatActivity {
             Intent endSessionIntent = mAuthService.getEndSessionRequestIntent(
                     new EndSessionRequest.Builder(
                         config,
-                        currentState.getIdToken(),
+                        mConfiguration.getClientId(),
                         mConfiguration.getEndSessionRedirectUri()).build());
             startActivityForResult(endSessionIntent, END_SESSION_REQUEST_CODE);
         } else {

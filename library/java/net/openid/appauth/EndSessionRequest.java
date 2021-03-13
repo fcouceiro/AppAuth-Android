@@ -35,17 +35,14 @@ import org.json.JSONObject;
  */
 public class EndSessionRequest extends AuthorizationManagementRequest {
 
-    private static final String PARAM_ID_TOKEN_HINT = "id_token_hint";
-    private static final String PARAM_REDIRECT_URI = "post_logout_redirect_uri";
-    private static final String PARAM_STATE = "state";
+    private static final String PARAM_LOGOUT_URI_URI = "logout_uri";
+    private static final String PARAM_CLIENT_ID = "client_id";
     private static final String KEY_CONFIGURATION = "configuration";
 
     @VisibleForTesting
-    static final String KEY_ID_TOKEN_HINT = "id_token_hint";
+    static final String KEY_CLIENT_ID = "client_id";
     @VisibleForTesting
-    static final String KEY_REDIRECT_URI = "post_logout_redirect_uri";
-    @VisibleForTesting
-    static final String KEY_STATE = "state";
+    static final String KEY_LOGOUT_URI = "logout_uri";
 
     /**
      * The service's {@link AuthorizationServiceConfiguration configuration}.
@@ -60,41 +57,17 @@ public class EndSessionRequest extends AuthorizationManagementRequest {
     @NonNull
     public final AuthorizationServiceConfiguration configuration;
 
-    /**
-     * An OpenID Connect ID Token. Contains claims about the authentication of an End-User by an
-     * Authorization Server.
-     *
-     * @see "OpenID Connect Session Management 1.0 - draft 28, 5 RP-Initiated Logout
-     * <https://openid.net/specs/openid-connect-session-1_0.html#RPLogout>"
-     * @see "OpenID Connect Core ID Token, Section 2
-     * <http://openid.net/specs/openid-connect-core-1_0.html#IDToken>"
-     */
     @NonNull
-    public final String idToken;
+    public final String clientId;
 
     /**
-     * The client's redirect URI.
+     * The client's logout URI.
      *
      * @see "OpenID Connect Session Management 1.0 - draft 28, 5.1.  Redirection to RP After Logout
      * <https://openid.net/specs/openid-connect-session-1_0.html#RedirectionAfterLogout>"
      */
     @NonNull
-    public final Uri redirectUri;
-
-    /**
-     * An opaque value used by the client to maintain state between the request and callback. If
-     * this value is not explicitly set, this library will automatically add state and perform
-     * appropriate  validation of the state in the authorization response. It is recommended that
-     * the default implementation of this parameter be used wherever possible. Typically used to
-     * prevent CSRF attacks, as recommended in
-     *
-     * @see "OpenID Connect Session Management 1.0 - draft 28, 5  RP-Initiated Logout
-     * <https://openid.net/specs/openid-connect-session-1_0.html#RedirectionAfterLogout>"
-     * @see "The OAuth 2.0 Authorization Framework (RFC 6749), Section 5.3.5
-     * <https://tools.ietf.org/html/rfc6749#section-5.3.5>"
-     */
-    @NonNull
-    public final String state;
+    public final Uri logoutUri;
 
     /**
      * Creates instances of {@link EndSessionRequest}.
@@ -105,22 +78,18 @@ public class EndSessionRequest extends AuthorizationManagementRequest {
         private AuthorizationServiceConfiguration mConfiguration;
 
         @NonNull
-        private String mIdToken;
+        private String mClientId;
 
         @NonNull
-        private Uri mRedirectUri;
-
-        @NonNull
-        private String mState;
+        private Uri mLogoutUri;
 
         public Builder(
                 @NonNull AuthorizationServiceConfiguration configuration,
-                @NonNull String idToken,
-                @NonNull Uri redirectUri) {
+                @NonNull String clientId,
+                @NonNull Uri logoutUri) {
             setAuthorizationServiceConfiguration(configuration);
-            setIdToken(idToken);
-            setRedirectUri(redirectUri);
-            setState(AuthorizationManagementRequest.generateRandomState());
+            setClientId(clientId);
+            setLogoutUri(logoutUri);
         }
 
         /**
@@ -132,18 +101,13 @@ public class EndSessionRequest extends AuthorizationManagementRequest {
             return this;
         }
 
-        public Builder setIdToken(@NonNull String idToken) {
-            mIdToken = checkNotEmpty(idToken, "idToken cannot be null or empty");
+        public Builder setClientId(@NonNull String clientId) {
+            mClientId = checkNotEmpty(clientId, "client id cannot be null or empty");
             return this;
         }
 
-        public Builder setRedirectUri(@Nullable Uri redirectUri) {
-            mRedirectUri = checkNotNull(redirectUri, "redirect Uri cannot be null");
-            return this;
-        }
-
-        public Builder setState(@NonNull String state) {
-            mState = checkNotEmpty(state, "state cannot be null or empty");
+        public Builder setLogoutUri(@Nullable Uri logoutUri) {
+            mLogoutUri = checkNotNull(logoutUri, "logout Uri cannot be null");
             return this;
         }
 
@@ -155,36 +119,26 @@ public class EndSessionRequest extends AuthorizationManagementRequest {
         public EndSessionRequest build() {
             return new EndSessionRequest(
                 mConfiguration,
-                mIdToken,
-                mRedirectUri,
-                mState);
+                mClientId,
+                mLogoutUri);
         }
     }
 
     @VisibleForTesting
     private EndSessionRequest(
             @NonNull AuthorizationServiceConfiguration configuration,
-            @NonNull String idToken,
-            @NonNull Uri redirectUri,
-            @NonNull String state) {
+            @NonNull String clientId,
+            @NonNull Uri logoutUri) {
         this.configuration = configuration;
-        this.idToken = idToken;
-        this.redirectUri = redirectUri;
-        this.state = state;
-    }
-
-    @Override
-    @NonNull
-    public String getState() {
-        return state;
+        this.clientId = clientId;
+        this.logoutUri = logoutUri;
     }
 
     @Override
     public Uri toUri() {
         Uri.Builder uriBuilder = configuration.endSessionEndpoint.buildUpon()
-                .appendQueryParameter(PARAM_REDIRECT_URI, redirectUri.toString())
-                .appendQueryParameter(PARAM_ID_TOKEN_HINT, idToken)
-                .appendQueryParameter(PARAM_STATE, state);
+                .appendQueryParameter(PARAM_LOGOUT_URI_URI, logoutUri.toString())
+                .appendQueryParameter(PARAM_CLIENT_ID, clientId);
         return  uriBuilder.build();
     }
 
@@ -196,10 +150,14 @@ public class EndSessionRequest extends AuthorizationManagementRequest {
     public JSONObject jsonSerialize() {
         JSONObject json = new JSONObject();
         JsonUtil.put(json, KEY_CONFIGURATION, configuration.toJson());
-        JsonUtil.put(json, KEY_ID_TOKEN_HINT, idToken);
-        JsonUtil.put(json, KEY_REDIRECT_URI, redirectUri.toString());
-        JsonUtil.put(json, KEY_STATE, state);
+        JsonUtil.put(json, KEY_CLIENT_ID, clientId);
+        JsonUtil.put(json, KEY_LOGOUT_URI, logoutUri.toString());
         return json;
+    }
+
+    @Override
+    public String getState() {
+        return null; // AWS Cognito does not handle state
     }
 
     /**
@@ -212,9 +170,8 @@ public class EndSessionRequest extends AuthorizationManagementRequest {
         checkNotNull(jsonObject, "json cannot be null");
         return new EndSessionRequest(
             AuthorizationServiceConfiguration.fromJson(jsonObject.getJSONObject(KEY_CONFIGURATION)),
-            JsonUtil.getString(jsonObject, KEY_ID_TOKEN_HINT),
-            JsonUtil.getUri(jsonObject, KEY_REDIRECT_URI),
-            JsonUtil.getString(jsonObject, KEY_STATE)
+            JsonUtil.getString(jsonObject, KEY_CLIENT_ID),
+            JsonUtil.getUri(jsonObject, KEY_LOGOUT_URI)
         );
     }
 
@@ -232,7 +189,7 @@ public class EndSessionRequest extends AuthorizationManagementRequest {
     }
 
     static boolean isEndSessionRequest(JSONObject json) {
-        return json.has(KEY_REDIRECT_URI);
+        return json.has(KEY_LOGOUT_URI);
     }
 
 }
