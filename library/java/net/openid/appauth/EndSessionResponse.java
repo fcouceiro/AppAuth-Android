@@ -14,7 +14,6 @@
 
 package net.openid.appauth;
 
-import static net.openid.appauth.Preconditions.checkNotEmpty;
 import static net.openid.appauth.Preconditions.checkNotNull;
 
 import android.content.Intent;
@@ -44,21 +43,11 @@ public class EndSessionResponse extends AuthorizationManagementResponse {
     @VisibleForTesting
     static final String KEY_REQUEST = "request";
 
-    @VisibleForTesting
-    static final String KEY_STATE = "state";
-
     /**
      * The end session request associated with this response.
      */
     @NonNull
     public final EndSessionRequest request;
-
-    /**
-     * The returned state parameter, which must match the value specified in the request.
-     * AppAuth for Android ensures that this is the case.
-     */
-    @NonNull
-    public final String state;
 
     /**
      * Creates instances of {@link EndSessionResponse}.
@@ -67,17 +56,13 @@ public class EndSessionResponse extends AuthorizationManagementResponse {
         @NonNull
         private EndSessionRequest mRequest;
 
-        @NonNull
-        private String mState;
-
-
         public Builder(@NonNull EndSessionRequest request) {
             setRequest(request);
         }
 
         @VisibleForTesting
         Builder fromUri(@NonNull Uri uri) {
-            setState(uri.getQueryParameter(EndSessionRequest.KEY_STATE));
+            // Parse uri parameters if needed (AWS Cognito does not include any)
             return this;
         }
 
@@ -86,33 +71,23 @@ public class EndSessionResponse extends AuthorizationManagementResponse {
             return this;
         }
 
-        public Builder setState(@NonNull String state) {
-            mState = checkNotEmpty(state, "state cannot be null or empty");
-            return this;
-        }
-
         /**
          * Builds the response object.
          */
         @NonNull
         public EndSessionResponse build() {
-            return new EndSessionResponse(
-                mRequest,
-                mState);
+            return new EndSessionResponse(mRequest);
         }
     }
 
-    private EndSessionResponse(
-            @NonNull EndSessionRequest request,
-            @NonNull String state) {
+    private EndSessionResponse(@NonNull EndSessionRequest request) {
         this.request = request;
-        this.state = state;
     }
 
     @Override
     @NonNull
     public String getState() {
-        return state;
+        return null; // AWS Cognito does not handle state
     }
 
     /**
@@ -124,7 +99,6 @@ public class EndSessionResponse extends AuthorizationManagementResponse {
     public JSONObject jsonSerialize() {
         JSONObject json = new JSONObject();
         JsonUtil.put(json, KEY_REQUEST, request.jsonSerialize());
-        JsonUtil.putIfNotNull(json, KEY_STATE, state);
         return json;
     }
 
@@ -146,8 +120,7 @@ public class EndSessionResponse extends AuthorizationManagementResponse {
                 EndSessionRequest.jsonDeserialize(json.getJSONObject(KEY_REQUEST));
 
         return new EndSessionResponse(
-                request,
-                JsonUtil.getString(json, KEY_STATE)
+                request
             );
     }
 

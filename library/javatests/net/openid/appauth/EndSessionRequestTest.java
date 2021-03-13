@@ -54,25 +54,14 @@ public class EndSessionRequestTest {
     }
 
     @Test
-    public void testState_notNull() {
-        EndSessionRequest request = new EndSessionRequest.Builder(
-            getTestServiceConfig(),
-            TEST_ID_TOKEN,
-            TEST_APP_REDIRECT_URI).build();
-        assertNotNull(request.getState());
-    }
-
-    @Test
     public void testToUri() {
         EndSessionRequest request = TestValues.getTestEndSessionRequest();
         Uri requestUri = request.toUri();
 
-        assertThat(requestUri.getQueryParameter(EndSessionRequest.KEY_ID_TOKEN_HINT))
-            .isEqualTo(request.idToken);
-        assertThat(requestUri.getQueryParameter(EndSessionRequest.KEY_REDIRECT_URI))
-            .isEqualTo(request.redirectUri.toString());
-        assertThat(requestUri.getQueryParameter(EndSessionRequest.KEY_STATE))
-            .isEqualTo(request.state);
+        assertThat(requestUri.getQueryParameter(EndSessionRequest.KEY_CLIENT_ID))
+            .isEqualTo(request.clientId);
+        assertThat(requestUri.getQueryParameter(EndSessionRequest.KEY_LOGOUT_URI))
+            .isEqualTo(request.logoutUri.toString());
 
     }
 
@@ -80,9 +69,7 @@ public class EndSessionRequestTest {
     public void testJsonSerialize() throws Exception {
         EndSessionRequest resquest = TestValues.getTestEndSessionRequest();
         EndSessionRequest copy = serializeDeserialize(resquest);
-        assertThat(copy.idToken).isEqualTo(TEST_ID_TOKEN);
-        assertThat(copy.state).isEqualTo(resquest.state);
-        assertThat(copy.redirectUri).isEqualTo(resquest.redirectUri);
+        assertThat(copy.logoutUri).isEqualTo(resquest.logoutUri);
     }
 
     @Test

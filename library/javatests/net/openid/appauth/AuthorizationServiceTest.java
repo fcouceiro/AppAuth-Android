@@ -178,7 +178,6 @@ public class AuthorizationServiceTest {
     @Test
     public void testEndSessionRequest_withSpecifiedState() throws Exception {
         EndSessionRequest request = getTestEndSessionRequestBuilder()
-            .setState(TEST_STATE)
             .build();
         mService.performEndSessionRequest(request, mPendingIntent);
         Intent intent = captureAuthRequestIntent();

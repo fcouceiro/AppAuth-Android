@@ -97,8 +97,7 @@ public class AuthorizationManagementActivityTest {
                 .appendQueryParameter(AuthorizationResponse.KEY_AUTHORIZATION_CODE, "12345")
                 .build();
 
-        mSuccessEndSessionRedirect = mEndSessionRequest.redirectUri.buildUpon()
-            .appendQueryParameter(EndSessionRequest.KEY_STATE, mEndSessionRequest.getState())
+        mSuccessEndSessionRedirect = mEndSessionRequest.logoutUri.buildUpon()
             .build();
 
         mErrorAuthRedirect = mAuthRequest.redirectUri.buildUpon()
@@ -110,7 +109,7 @@ public class AuthorizationManagementActivityTest {
                         AuthorizationRequestErrors.ACCESS_DENIED.errorDescription)
                 .build();
 
-        mErrorEndSessionRedirect = mEndSessionRequest.redirectUri.buildUpon()
+        mErrorEndSessionRedirect = mEndSessionRequest.logoutUri.buildUpon()
             .appendQueryParameter(AuthorizationException.PARAM_ERROR,
                 AuthorizationRequestErrors.ACCESS_DENIED.error)
             .appendQueryParameter(
@@ -529,28 +528,6 @@ public class AuthorizationManagementActivityTest {
     }
 
     @Test
-    public void testEndSessionnMismatchedState_withPendingIntentsAndResponseDiffersFromRequest() {
-        emulateFlowToAuthorizationActivityLaunch(mEndSessionIntentWithPendings);
-
-        Uri authResponseUri = mEndSessionRequest.redirectUri.buildUpon()
-            .appendQueryParameter(EndSessionRequest.KEY_STATE, "differentState")
-            .build();
-
-        Intent nextStartedActivity = emulateAuthorizationResponseReceived(
-            AuthorizationManagementActivity.createResponseHandlingIntent(
-                mContext,
-                authResponseUri));
-
-        // the next activity should be from the completion intent, carrying an error
-        assertThat(nextStartedActivity).hasAction("COMPLETE");
-        assertThat(nextStartedActivity).hasData(authResponseUri);
-        assertThat(nextStartedActivity).extras().containsKey(AuthorizationException.EXTRA_EXCEPTION);
-
-        assertThat(AuthorizationException.fromIntent(nextStartedActivity))
-            .isEqualTo(AuthorizationRequestErrors.STATE_MISMATCH);
-    }
-
-    @Test
     public void testLoginMismatchedState_withoutPendingIntentsAndResponseDiffersFromRequest() {
         emulateFlowToAuthorizationActivityLaunch(mStartAuthForResultIntent);
 
@@ -576,33 +553,6 @@ public class AuthorizationManagementActivityTest {
 
         assertThat(AuthorizationException.fromIntent(resultIntent))
                 .isEqualTo(AuthorizationRequestErrors.STATE_MISMATCH);
-    }
-
-    @Test
-    public void testEndSessionMismatchedState_withoutPendingIntentsAndResponseDiffersFromRequest() {
-        emulateFlowToAuthorizationActivityLaunch(mEndSessionForResultIntent);
-
-        Uri authResponseUri = mEndSessionRequest.redirectUri.buildUpon()
-            .appendQueryParameter(AuthorizationResponse.KEY_STATE, "differentState")
-            .build();
-
-        // the authorization redirect will be forwarded via a new intent
-        mController.newIntent(AuthorizationManagementActivity.createResponseHandlingIntent(
-            mContext,
-            authResponseUri));
-
-        // the management activity is then resumed
-        mController.resume();
-
-        // no completion intent, so exception should be passed to calling activity
-        // via the result intent supplied to setResult
-        Intent resultIntent = mActivityShadow.getResultIntent();
-
-        assertThat(resultIntent).hasData(authResponseUri);
-        assertThat(resultIntent).extras().containsKey(AuthorizationException.EXTRA_EXCEPTION);
-
-        assertThat(AuthorizationException.fromIntent(resultIntent))
-            .isEqualTo(AuthorizationRequestErrors.STATE_MISMATCH);
     }
 
     @Test
@@ -634,32 +584,6 @@ public class AuthorizationManagementActivityTest {
     }
 
     @Test
-    public void testEndSessionMismatchedState_withPendingIntentsAndNoStateInRequestWithStateInResponse() {
-        EndSessionRequest request = new EndSessionRequest.Builder(
-            TestValues.getTestServiceConfig(),
-            TestValues.TEST_ID_TOKEN,
-            TestValues.TEST_APP_REDIRECT_URI)
-            .setState("state")
-            .build();
-
-        Intent startIntent = createStartIntentWithPendingIntents(request, mCancelPendingIntent);
-        emulateFlowToAuthorizationActivityLaunch(startIntent);
-
-        Uri authResponseUri = mEndSessionRequest.redirectUri.buildUpon()
-            .appendQueryParameter(AuthorizationResponse.KEY_STATE, "differentState")
-            .build();
-
-        // the next activity should be from the completion intent, carrying an error
-        Intent nextStartedActivity = emulateAuthorizationResponseReceived(
-            AuthorizationManagementActivity.createResponseHandlingIntent(
-                mContext,
-                authResponseUri));
-
-        assertThat(AuthorizationException.fromIntent(nextStartedActivity))
-            .isEqualTo(AuthorizationRequestErrors.STATE_MISMATCH);
-    }
-
-    @Test
     public void testLoginMismatchedState_withoutPendingIntentsAndNoStateInRequestWithStateInResponse() {
         AuthorizationRequest request = new AuthorizationRequest.Builder(
                 TestValues.getTestServiceConfig(),
@@ -688,35 +612,6 @@ public class AuthorizationManagementActivityTest {
         Intent resultIntent = mActivityShadow.getResultIntent();
         assertThat(AuthorizationException.fromIntent(resultIntent))
                 .isEqualTo(AuthorizationRequestErrors.STATE_MISMATCH);
-    }
-
-    @Test
-    public void testEndSessionMismatchedState_withoutPendingIntentsAndNoStateInRequestWithStateInResponse() {
-        EndSessionRequest request = new EndSessionRequest.Builder(
-            TestValues.getTestServiceConfig(),
-            TestValues.TEST_ID_TOKEN,
-            TestValues.TEST_APP_REDIRECT_URI)
-            .setState("state")
-            .build();
-
-        Intent startIntent = createStartForResultIntent(request);
-        emulateFlowToAuthorizationActivityLaunch(startIntent);
-
-        Uri authResponseUri = mEndSessionRequest.redirectUri.buildUpon()
-            .appendQueryParameter(AuthorizationResponse.KEY_STATE, "differentState")
-            .build();
-
-        // the authorization redirect will be forwarded via a new intent
-        mController.newIntent(AuthorizationManagementActivity.createResponseHandlingIntent(
-            mContext,
-            authResponseUri));
-
-        // the management activity is then resumed
-        mController.resume();
-
-        Intent resultIntent = mActivityShadow.getResultIntent();
-        assertThat(AuthorizationException.fromIntent(resultIntent))
-            .isEqualTo(AuthorizationRequestErrors.STATE_MISMATCH);
     }
 
     @Test

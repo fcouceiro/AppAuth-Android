@@ -21,21 +21,13 @@ public class EndSessionResponseTest {
 
     @Test(expected = NullPointerException.class)
     public void testBuilder_nullRequest(){
-        new EndSessionResponse.Builder(null)
-            .setState(TEST_REQUEST.state);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testBuilder_nullState(){
-        new EndSessionResponse.Builder(TEST_REQUEST)
-            .setState(null);
+        new EndSessionResponse.Builder(null);
     }
 
     @Test
     public void testIntentSerializeDeserialize(){
         EndSessionResponse endSessionResponse =
             new EndSessionResponse.Builder(TEST_REQUEST)
-                .setState(TEST_REQUEST.state)
                 .build();
 
         Intent endSessionIntent = endSessionResponse.toIntent();
@@ -43,15 +35,12 @@ public class EndSessionResponseTest {
         EndSessionResponse deserializeResponse = EndSessionResponse.fromIntent(endSessionIntent);
 
         assertThat(deserializeResponse).isNotNull();
-        assertThat(deserializeResponse.state).isEqualTo(endSessionResponse.request.state);
-        assertThat(deserializeResponse.request.redirectUri)
-            .isEqualTo(endSessionResponse.request.redirectUri);
+        assertThat(deserializeResponse.request.logoutUri)
+            .isEqualTo(endSessionResponse.request.logoutUri);
         assertThat(deserializeResponse.request.configuration.endSessionEndpoint)
             .isEqualTo(endSessionResponse.request.configuration.endSessionEndpoint);
-        assertThat(deserializeResponse.request.state)
-            .isEqualTo(endSessionResponse.request.state);
-        assertThat(deserializeResponse.request.idToken)
-            .isEqualTo(endSessionResponse.request.idToken);
+        assertThat(deserializeResponse.request.clientId)
+            .isEqualTo(endSessionResponse.request.clientId);
     }
 
     @Test
@@ -71,7 +60,6 @@ public class EndSessionResponseTest {
     public void testJsonSerializeDeserialize() throws JSONException {
         EndSessionResponse endSessionResponse =
             new EndSessionResponse.Builder(TEST_REQUEST)
-                .setState(TEST_REQUEST.state)
                 .build();
 
         JSONObject endSessionResponseJson = endSessionResponse.jsonSerialize();
@@ -80,26 +68,21 @@ public class EndSessionResponseTest {
             EndSessionResponse.jsonDeserialize(endSessionResponseJson);
 
         assertThat(deserializeResponse).isNotNull();
-        assertThat(deserializeResponse.state).isEqualTo(endSessionResponse.state);
-        assertThat(deserializeResponse.request.redirectUri)
-            .isEqualTo(endSessionResponse.request.redirectUri);
+        assertThat(deserializeResponse.request.logoutUri)
+            .isEqualTo(endSessionResponse.request.logoutUri);
         assertThat(deserializeResponse.request.configuration.endSessionEndpoint)
             .isEqualTo(endSessionResponse.request.configuration.endSessionEndpoint);
-        assertThat(deserializeResponse.request.state)
-            .isEqualTo(endSessionResponse.request.state);
-        assertThat(deserializeResponse.request.idToken)
-            .isEqualTo(endSessionResponse.request.idToken);
+        assertThat(deserializeResponse.request.clientId)
+            .isEqualTo(endSessionResponse.request.clientId);
     }
 
     @Test
     public void testFromRequestAndUri_Success(){
         EndSessionResponse endSessionResponse =
             new EndSessionResponse.Builder(TEST_REQUEST)
-                .setState(TEST_REQUEST.state)
                 .build();
 
         Uri endSessionUri = new Uri.Builder()
-            .appendQueryParameter(EndSessionResponse.KEY_STATE, TEST_REQUEST.state)
             .build();
 
         EndSessionResponse endSessionResponseDeserialized =
@@ -107,22 +90,18 @@ public class EndSessionResponseTest {
                 .fromUri(endSessionUri)
                 .build();
         assertThat(endSessionResponseDeserialized).isNotNull();
-        assertThat(endSessionResponseDeserialized.state).isEqualTo(endSessionResponse.state);
-        assertThat(endSessionResponseDeserialized.request.redirectUri)
-            .isEqualTo(endSessionResponse.request.redirectUri);
+        assertThat(endSessionResponseDeserialized.request.logoutUri)
+            .isEqualTo(endSessionResponse.request.logoutUri);
         assertThat(endSessionResponseDeserialized.request.configuration.endSessionEndpoint)
             .isEqualTo(endSessionResponse.request.configuration.endSessionEndpoint);
-        assertThat(endSessionResponseDeserialized.request.state)
-            .isEqualTo(endSessionResponse.request.state);
-        assertThat(endSessionResponseDeserialized.request.idToken)
-            .isEqualTo(endSessionResponse.request.idToken);
+        assertThat(endSessionResponseDeserialized.request.clientId)
+            .isEqualTo(endSessionResponse.request.clientId);
     }
 
     @Test
     public void testIntent_containsEndSessionResponse_True() {
         EndSessionResponse endSessionResponse =
             new EndSessionResponse.Builder(TEST_REQUEST)
-                .setState(TEST_REQUEST.state)
                 .build();
 
         Intent endSessionIntent = endSessionResponse.toIntent();
